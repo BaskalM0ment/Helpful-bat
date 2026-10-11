@@ -318,7 +318,7 @@ function Poll-ServerOutput {
         return
     }
 
-    if ($script:OutTask -and $script:OutTask.IsCompleted) {
+    while ($script:OutTask -and $script:OutTask.IsCompleted) {
         try {
             $line = $script:OutTask.GetAwaiter().GetResult()
         } catch {
@@ -327,18 +327,19 @@ function Poll-ServerOutput {
 
         if ($null -eq $line) {
             $script:OutTask = $null
-        } else {
-            Add-LogLine $line
-            Process-LogLine $line
-            try {
-                $script:OutTask = $script:ServerProcess.StandardOutput.ReadLineAsync()
-            } catch {
-                $script:OutTask = $null
-            }
+            break
+        }
+
+        Add-LogLine $line
+        Process-LogLine $line
+        try {
+            $script:OutTask = $script:ServerProcess.StandardOutput.ReadLineAsync()
+        } catch {
+            $script:OutTask = $null
         }
     }
 
-    if ($script:ErrTask -and $script:ErrTask.IsCompleted) {
+    while ($script:ErrTask -and $script:ErrTask.IsCompleted) {
         try {
             $line = $script:ErrTask.GetAwaiter().GetResult()
         } catch {
@@ -347,13 +348,14 @@ function Poll-ServerOutput {
 
         if ($null -eq $line) {
             $script:ErrTask = $null
-        } else {
-            Add-LogLine ('[stderr] ' + $line)
-            try {
-                $script:ErrTask = $script:ServerProcess.StandardError.ReadLineAsync()
-            } catch {
-                $script:ErrTask = $null
-            }
+            break
+        }
+
+        Add-LogLine ('[stderr] ' + $line)
+        try {
+            $script:ErrTask = $script:ServerProcess.StandardError.ReadLineAsync()
+        } catch {
+            $script:ErrTask = $null
         }
     }
 
