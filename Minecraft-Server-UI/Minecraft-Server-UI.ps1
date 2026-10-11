@@ -43,7 +43,8 @@ function Set-Status {
     param([string]$Text, [System.Drawing.Color]$Color)
     if ($script:StatusLabel) {
         $script:StatusLabel.Text = $Text
-        $script:StatusLabel.BackColor = $Color
+        $script:StatusLabel.BackColor = [System.Drawing.Color]::FromArgb(8, 8, 8)
+        $script:StatusLabel.ForeColor = $Color
     }
 }
 
@@ -125,13 +126,13 @@ function Process-LogLine {
     if ($Line -match 'Done \(') {
         $script:ServerReady = $true
         if (-not $script:WaitingForChoice) {
-            Set-Status 'ONLINE' ([System.Drawing.Color]::FromArgb(30, 115, 75))
+            Set-Status 'ONLINE' ([System.Drawing.Color]::FromArgb(74, 222, 128))
         }
     }
 
     if ($Line -match '(?i)Type\s+R\s+to\s+restart.*X\s+to\s+exit') {
         $script:WaitingForChoice = $true
-        Set-Status 'WAITING FOR INPUT' ([System.Drawing.Color]::FromArgb(135, 90, 25))
+        Set-Status 'WAITING FOR INPUT' ([System.Drawing.Color]::FromArgb(250, 204, 21))
 
         if ($script:RestartRequested) {
             Send-ManagerInput 'R'
@@ -141,7 +142,7 @@ function Process-LogLine {
             $script:ServerReady = $false
             $script:ServerStartedAt = Get-Date
             Reset-PlayerTracking
-            Set-Status 'STARTING' ([System.Drawing.Color]::FromArgb(35, 85, 145))
+            Set-Status 'STARTING' ([System.Drawing.Color]::FromArgb(96, 165, 250))
         } elseif ($script:StopRequested) {
             Send-ManagerInput 'X'
             $script:StopRequested = $false
@@ -236,12 +237,12 @@ function Start-ServerManager {
         $script:ServerProcess = $process
         $script:OutTask = $process.StandardOutput.ReadLineAsync()
         $script:ErrTask = $process.StandardError.ReadLineAsync()
-        Set-Status 'STARTING' ([System.Drawing.Color]::FromArgb(35, 85, 145))
+        Set-Status 'STARTING' ([System.Drawing.Color]::FromArgb(96, 165, 250))
         Add-LogLine ('[UI] Launching ' + $manager)
         Add-LogLine '[UI] Live logs and player tracking are active.'
     } catch {
         $script:ServerProcess = $null
-        Set-Status 'OFFLINE' ([System.Drawing.Color]::FromArgb(75, 45, 50))
+        Set-Status 'OFFLINE' ([System.Drawing.Color]::FromArgb(248, 113, 113))
         Add-LogLine ('[UI] Could not start server manager: ' + $_.Exception.Message)
         [void][System.Windows.Forms.MessageBox]::Show(
             $_.Exception.Message,
@@ -303,7 +304,7 @@ function Restart-ServerManager {
         $script:ServerReady = $false
         $script:ServerStartedAt = Get-Date
         Reset-PlayerTracking
-        Set-Status 'STARTING' ([System.Drawing.Color]::FromArgb(35, 85, 145))
+        Set-Status 'STARTING' ([System.Drawing.Color]::FromArgb(96, 165, 250))
         return
     }
 
@@ -370,7 +371,7 @@ function Poll-ServerOutput {
             $script:WaitingForChoice = $false
             $script:RestartRequested = $false
             $script:StopRequested = $false
-            Set-Status 'OFFLINE' ([System.Drawing.Color]::FromArgb(75, 45, 50))
+            Set-Status 'OFFLINE' ([System.Drawing.Color]::FromArgb(248, 113, 113))
         }
     } catch {}
 }
@@ -385,11 +386,11 @@ function Update-Metrics {
 
     if ($active) {
         if ($script:WaitingForChoice) {
-            Set-Status 'WAITING FOR INPUT' ([System.Drawing.Color]::FromArgb(135, 90, 25))
+            Set-Status 'WAITING FOR INPUT' ([System.Drawing.Color]::FromArgb(250, 204, 21))
         } elseif ($script:ServerReady) {
-            Set-Status 'ONLINE' ([System.Drawing.Color]::FromArgb(30, 115, 75))
+            Set-Status 'ONLINE' ([System.Drawing.Color]::FromArgb(74, 222, 128))
         } else {
-            Set-Status 'STARTING' ([System.Drawing.Color]::FromArgb(35, 85, 145))
+            Set-Status 'STARTING' ([System.Drawing.Color]::FromArgb(96, 165, 250))
         }
 
         if ($script:ServerStartedAt) {
@@ -398,7 +399,7 @@ function Update-Metrics {
         }
     } else {
         if (-not $script:ServerProcess) {
-            Set-Status 'OFFLINE' ([System.Drawing.Color]::FromArgb(75, 45, 50))
+            Set-Status 'OFFLINE' ([System.Drawing.Color]::FromArgb(248, 113, 113))
         }
         $script:UptimeLabel.Text = 'Session: --'
     }
@@ -435,12 +436,15 @@ function New-PanelButton {
     $button = New-Object System.Windows.Forms.Button
     $button.Text = $Text
     $button.Location = [System.Drawing.Point]::new($X, $Y)
-    $button.Size = [System.Drawing.Size]::new($Width, 38)
+    $button.Size = [System.Drawing.Size]::new($Width, 40)
     $button.BackColor = $Color
-    $button.ForeColor = [System.Drawing.Color]::White
+    $button.ForeColor = [System.Drawing.Color]::FromArgb(245, 245, 245)
     $button.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
     $button.FlatAppearance.BorderSize = 0
-    $button.Font = [System.Drawing.Font]::new('Segoe UI', 9, [System.Drawing.FontStyle]::Bold)
+    $button.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(42, 42, 42)
+    $button.FlatAppearance.MouseDownBackColor = [System.Drawing.Color]::FromArgb(58, 58, 58)
+    $button.UseVisualStyleBackColor = $false
+    $button.Font = [System.Drawing.Font]::new('Segoe UI Semibold', 9, [System.Drawing.FontStyle]::Bold)
     $button.Cursor = [System.Windows.Forms.Cursors]::Hand
     return $button
 }
@@ -469,125 +473,162 @@ $form = New-Object System.Windows.Forms.Form
 $script:Form = $form
 $form.Text = 'Minecraft Server Control Panel'
 $form.StartPosition = [System.Windows.Forms.FormStartPosition]::CenterScreen
-$form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::Sizable
-$form.MinimumSize = [System.Drawing.Size]::new(1000, 680)
-$form.ClientSize = [System.Drawing.Size]::new(1160, 760)
-$form.BackColor = [System.Drawing.Color]::FromArgb(13, 17, 27)
-$form.ForeColor = [System.Drawing.Color]::Gainsboro
+$form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
+$form.MaximizeBox = $false
+$form.MinimizeBox = $true
+$form.AutoScaleMode = [System.Windows.Forms.AutoScaleMode]::None
+$form.ClientSize = [System.Drawing.Size]::new(1200, 850)
+$form.BackColor = [System.Drawing.Color]::Black
+$form.ForeColor = [System.Drawing.Color]::FromArgb(235, 235, 235)
 $form.Font = [System.Drawing.Font]::new('Segoe UI', 9)
+$form.ShowInTaskbar = $true
 
+# Header
 $header = New-Object System.Windows.Forms.Panel
 $header.Location = [System.Drawing.Point]::new(0, 0)
-$header.Size = [System.Drawing.Size]::new(1160, 80)
-$header.Anchor = [System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Left -bor [System.Windows.Forms.AnchorStyles]::Right
-$header.BackColor = [System.Drawing.Color]::FromArgb(22, 29, 47)
+$header.Size = [System.Drawing.Size]::new(1200, 96)
+$header.BackColor = [System.Drawing.Color]::Black
 $form.Controls.Add($header)
 
-$title = New-TextLabel 'MINECRAFT SERVER' 20 10 500 32 18 ([System.Drawing.Color]::FromArgb(235, 242, 255))
-$title.Font = [System.Drawing.Font]::new('Segoe UI Semibold', 18, [System.Drawing.FontStyle]::Bold)
+$title = New-TextLabel 'MINECRAFT SERVER' 24 14 560 32 19 ([System.Drawing.Color]::FromArgb(248, 248, 248))
+$title.Font = [System.Drawing.Font]::new('Segoe UI Semibold', 19, [System.Drawing.FontStyle]::Bold)
 $header.Controls.Add($title)
 
-$subtitle = New-TextLabel 'CONTROL PANEL  /  FABRIC + PLAYIT' 23 45 500 20 9 ([System.Drawing.Color]::FromArgb(135, 157, 190))
+$subtitle = New-TextLabel 'FABRIC  /  PLAYIT  /  SERVER CONTROL' 25 51 560 20 9 ([System.Drawing.Color]::FromArgb(125, 125, 125))
 $header.Controls.Add($subtitle)
+
+$headerLine = New-Object System.Windows.Forms.Panel
+$headerLine.Location = [System.Drawing.Point]::new(18, 94)
+$headerLine.Size = [System.Drawing.Size]::new(1164, 1)
+$headerLine.BackColor = [System.Drawing.Color]::FromArgb(34, 34, 34)
+$header.Controls.Add($headerLine)
 
 $script:StatusLabel = New-Object System.Windows.Forms.Label
 $script:StatusLabel.Text = 'OFFLINE'
 $script:StatusLabel.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
-$script:StatusLabel.Location = [System.Drawing.Point]::new(950, 21)
-$script:StatusLabel.Size = [System.Drawing.Size]::new(185, 36)
-$script:StatusLabel.BackColor = [System.Drawing.Color]::FromArgb(75, 45, 50)
-$script:StatusLabel.ForeColor = [System.Drawing.Color]::White
-$script:StatusLabel.Font = [System.Drawing.Font]::new('Segoe UI', 9, [System.Drawing.FontStyle]::Bold)
+$script:StatusLabel.Location = [System.Drawing.Point]::new(1000, 25)
+$script:StatusLabel.Size = [System.Drawing.Size]::new(180, 40)
+$script:StatusLabel.BackColor = [System.Drawing.Color]::FromArgb(8, 8, 8)
+$script:StatusLabel.ForeColor = [System.Drawing.Color]::FromArgb(248, 113, 113)
+$script:StatusLabel.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+$script:StatusLabel.Font = [System.Drawing.Font]::new('Segoe UI Semibold', 9, [System.Drawing.FontStyle]::Bold)
 $header.Controls.Add($script:StatusLabel)
 
-$script:StartButton = New-PanelButton 'START SERVER' 16 92 145 ([System.Drawing.Color]::FromArgb(30, 125, 82))
-$script:StopButton = New-PanelButton 'STOP SERVER' 170 92 135 ([System.Drawing.Color]::FromArgb(150, 55, 62))
-$script:RestartButton = New-PanelButton 'RESTART' 314 92 115 ([System.Drawing.Color]::FromArgb(48, 90, 155))
-$script:ClearButton = New-PanelButton 'CLEAR LOGS' 438 92 115 ([System.Drawing.Color]::FromArgb(48, 57, 77))
-$script:OpenFolderButton = New-PanelButton 'OPEN FOLDER' 562 92 125 ([System.Drawing.Color]::FromArgb(48, 57, 77))
+# Primary controls
+$script:StartButton = New-PanelButton 'Start server' 18 112 148 ([System.Drawing.Color]::FromArgb(22, 163, 74))
+$script:StopButton = New-PanelButton 'Stop server' 176 112 142 ([System.Drawing.Color]::FromArgb(185, 28, 28))
+$script:RestartButton = New-PanelButton 'Restart' 328 112 122 ([System.Drawing.Color]::FromArgb(28, 28, 28))
+$script:ClearButton = New-PanelButton 'Clear logs' 460 112 122 ([System.Drawing.Color]::FromArgb(18, 18, 18))
+$script:OpenFolderButton = New-PanelButton 'Open folder' 592 112 140 ([System.Drawing.Color]::FromArgb(18, 18, 18))
 $form.Controls.Add($script:StartButton)
 $form.Controls.Add($script:StopButton)
 $form.Controls.Add($script:RestartButton)
 $form.Controls.Add($script:ClearButton)
 $form.Controls.Add($script:OpenFolderButton)
 
+# Main panels
 $sidePanel = New-Object System.Windows.Forms.Panel
-$sidePanel.Location = [System.Drawing.Point]::new(16, 142)
-$sidePanel.Size = [System.Drawing.Size]::new(330, 600)
-$sidePanel.Anchor = [System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Bottom -bor [System.Windows.Forms.AnchorStyles]::Left
-$sidePanel.BackColor = [System.Drawing.Color]::FromArgb(22, 27, 41)
+$sidePanel.Location = [System.Drawing.Point]::new(18, 170)
+$sidePanel.Size = [System.Drawing.Size]::new(330, 662)
+$sidePanel.BackColor = [System.Drawing.Color]::FromArgb(5, 5, 5)
+$sidePanel.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
 $form.Controls.Add($sidePanel)
 
 $logPanel = New-Object System.Windows.Forms.Panel
-$logPanel.Location = [System.Drawing.Point]::new(362, 142)
-$logPanel.Size = [System.Drawing.Size]::new(782, 600)
-$logPanel.Anchor = [System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Bottom -bor [System.Windows.Forms.AnchorStyles]::Left -bor [System.Windows.Forms.AnchorStyles]::Right
-$logPanel.BackColor = [System.Drawing.Color]::FromArgb(22, 27, 41)
+$logPanel.Location = [System.Drawing.Point]::new(366, 170)
+$logPanel.Size = [System.Drawing.Size]::new(816, 662)
+$logPanel.BackColor = [System.Drawing.Color]::FromArgb(5, 5, 5)
+$logPanel.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
 $form.Controls.Add($logPanel)
 
-$sidePanel.Controls.Add((New-TextLabel 'SERVER FOLDER' 12 12 290 20 9 ([System.Drawing.Color]::FromArgb(135, 157, 190))))
+# Server folder
+$sidePanel.Controls.Add((New-TextLabel 'SERVER FOLDER' 14 14 290 20 9 ([System.Drawing.Color]::FromArgb(145, 145, 145))))
 $script:PathBox = New-Object System.Windows.Forms.TextBox
-$script:PathBox.Location = [System.Drawing.Point]::new(12, 36)
-$script:PathBox.Size = [System.Drawing.Size]::new(306, 28)
+$script:PathBox.Location = [System.Drawing.Point]::new(14, 39)
+$script:PathBox.Size = [System.Drawing.Size]::new(298, 28)
 $script:PathBox.Text = $script:ServerDir
-$script:PathBox.BackColor = [System.Drawing.Color]::FromArgb(12, 16, 25)
-$script:PathBox.ForeColor = [System.Drawing.Color]::FromArgb(220, 230, 245)
+$script:PathBox.BackColor = [System.Drawing.Color]::Black
+$script:PathBox.ForeColor = [System.Drawing.Color]::FromArgb(235, 235, 235)
 $script:PathBox.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+$script:PathBox.Font = [System.Drawing.Font]::new('Segoe UI', 9)
 $sidePanel.Controls.Add($script:PathBox)
 
-$browseButton = New-PanelButton 'BROWSE...' 12 69 100 ([System.Drawing.Color]::FromArgb(48, 57, 77))
-$browseButton.Size = [System.Drawing.Size]::new(100, 32)
+$browseButton = New-PanelButton 'Browse...' 14 76 104 ([System.Drawing.Color]::FromArgb(22, 22, 22))
+$browseButton.Size = [System.Drawing.Size]::new(104, 32)
 $sidePanel.Controls.Add($browseButton)
 
-$sidePanel.Controls.Add((New-TextLabel 'PLAYIT ADDRESS' 12 112 290 20 9 ([System.Drawing.Color]::FromArgb(135, 157, 190))))
+# Playit address
+$sidePanel.Controls.Add((New-TextLabel 'PLAYIT ADDRESS' 14 126 290 20 9 ([System.Drawing.Color]::FromArgb(145, 145, 145))))
 $script:AddressBox = New-Object System.Windows.Forms.TextBox
-$script:AddressBox.Location = [System.Drawing.Point]::new(12, 136)
-$script:AddressBox.Size = [System.Drawing.Size]::new(306, 28)
+$script:AddressBox.Location = [System.Drawing.Point]::new(14, 151)
+$script:AddressBox.Size = [System.Drawing.Size]::new(298, 28)
 $script:AddressBox.Text = $script:PublicAddress
-$script:AddressBox.BackColor = [System.Drawing.Color]::FromArgb(12, 16, 25)
-$script:AddressBox.ForeColor = [System.Drawing.Color]::FromArgb(100, 235, 170)
+$script:AddressBox.BackColor = [System.Drawing.Color]::Black
+$script:AddressBox.ForeColor = [System.Drawing.Color]::FromArgb(74, 222, 128)
 $script:AddressBox.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
+$script:AddressBox.Font = [System.Drawing.Font]::new('Consolas', 9)
 $sidePanel.Controls.Add($script:AddressBox)
 
-$copyButton = New-PanelButton 'COPY ADDRESS' 12 169 120 ([System.Drawing.Color]::FromArgb(48, 57, 77))
-$copyButton.Size = [System.Drawing.Size]::new(120, 32)
+$copyButton = New-PanelButton 'Copy address' 14 188 126 ([System.Drawing.Color]::FromArgb(22, 22, 22))
+$copyButton.Size = [System.Drawing.Size]::new(126, 32)
 $sidePanel.Controls.Add($copyButton)
 
-$sidePanel.Controls.Add((New-TextLabel 'SERVER STATS' 12 216 290 20 9 ([System.Drawing.Color]::FromArgb(135, 157, 190))))
-$script:UptimeLabel = New-TextLabel 'Session: --' 12 242 300 22 10 ([System.Drawing.Color]::FromArgb(220, 230, 245))
-$script:RamLabel = New-TextLabel 'Java RAM: --' 12 268 300 22 10 ([System.Drawing.Color]::FromArgb(220, 230, 245))
-$script:PlayerCountLabel = New-TextLabel 'Players online: 0' 12 294 300 22 10 ([System.Drawing.Color]::FromArgb(100, 235, 170))
+# Stats
+$sidePanel.Controls.Add((New-TextLabel 'SERVER STATS' 14 239 290 20 9 ([System.Drawing.Color]::FromArgb(145, 145, 145))))
+$statsLine = New-Object System.Windows.Forms.Panel
+$statsLine.Location = [System.Drawing.Point]::new(14, 264)
+$statsLine.Size = [System.Drawing.Size]::new(298, 1)
+$statsLine.BackColor = [System.Drawing.Color]::FromArgb(34, 34, 34)
+$sidePanel.Controls.Add($statsLine)
+
+$script:UptimeLabel = New-TextLabel 'Session: --' 14 278 298 22 10 ([System.Drawing.Color]::FromArgb(230, 230, 230))
+$script:RamLabel = New-TextLabel 'Java RAM: --' 14 307 298 22 10 ([System.Drawing.Color]::FromArgb(230, 230, 230))
+$script:PlayerCountLabel = New-TextLabel 'Players online: 0' 14 336 298 22 10 ([System.Drawing.Color]::FromArgb(74, 222, 128))
 $sidePanel.Controls.Add($script:UptimeLabel)
 $sidePanel.Controls.Add($script:RamLabel)
 $sidePanel.Controls.Add($script:PlayerCountLabel)
 
-$sidePanel.Controls.Add((New-TextLabel 'CONNECTED PLAYERS' 12 331 290 20 9 ([System.Drawing.Color]::FromArgb(135, 157, 190))))
+$playersLine = New-Object System.Windows.Forms.Panel
+$playersLine.Location = [System.Drawing.Point]::new(14, 373)
+$playersLine.Size = [System.Drawing.Size]::new(298, 1)
+$playersLine.BackColor = [System.Drawing.Color]::FromArgb(34, 34, 34)
+$sidePanel.Controls.Add($playersLine)
+
+$sidePanel.Controls.Add((New-TextLabel 'CONNECTED PLAYERS' 14 392 298 20 9 ([System.Drawing.Color]::FromArgb(145, 145, 145))))
 $script:PlayerList = New-Object System.Windows.Forms.ListBox
-$script:PlayerList.Location = [System.Drawing.Point]::new(12, 355)
-$script:PlayerList.Size = [System.Drawing.Size]::new(306, 225)
-$script:PlayerList.BackColor = [System.Drawing.Color]::FromArgb(12, 16, 25)
-$script:PlayerList.ForeColor = [System.Drawing.Color]::FromArgb(100, 235, 170)
+$script:PlayerList.Location = [System.Drawing.Point]::new(14, 419)
+$script:PlayerList.Size = [System.Drawing.Size]::new(298, 208)
+$script:PlayerList.BackColor = [System.Drawing.Color]::Black
+$script:PlayerList.ForeColor = [System.Drawing.Color]::FromArgb(74, 222, 128)
 $script:PlayerList.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
 $script:PlayerList.Font = [System.Drawing.Font]::new('Consolas', 10)
 $sidePanel.Controls.Add($script:PlayerList)
 
-$logTitle = New-TextLabel 'LIVE CONSOLE LOG' 12 12 400 22 10 ([System.Drawing.Color]::FromArgb(220, 230, 245))
+$playerHint = New-TextLabel 'Live tracking begins when this panel starts the server.' 14 638 298 18 8 ([System.Drawing.Color]::FromArgb(105, 105, 105))
+$sidePanel.Controls.Add($playerHint)
+
+# Live console
+$logTitle = New-TextLabel 'LIVE CONSOLE' 14 13 400 22 10 ([System.Drawing.Color]::FromArgb(240, 240, 240))
 $logTitle.Font = [System.Drawing.Font]::new('Segoe UI Semibold', 10, [System.Drawing.FontStyle]::Bold)
 $logPanel.Controls.Add($logTitle)
 
+$logSubtitle = New-TextLabel 'Server output and control-panel messages' 14 36 500 18 8 ([System.Drawing.Color]::FromArgb(105, 105, 105))
+$logPanel.Controls.Add($logSubtitle)
+
 $script:LogBox = New-Object System.Windows.Forms.RichTextBox
-$script:LogBox.Location = [System.Drawing.Point]::new(12, 40)
-$script:LogBox.Size = [System.Drawing.Size]::new(758, 530)
-$script:LogBox.Anchor = [System.Windows.Forms.AnchorStyles]::Top -bor [System.Windows.Forms.AnchorStyles]::Bottom -bor [System.Windows.Forms.AnchorStyles]::Left -bor [System.Windows.Forms.AnchorStyles]::Right
+$script:LogBox.Location = [System.Drawing.Point]::new(14, 61)
+$script:LogBox.Size = [System.Drawing.Size]::new(786, 568)
 $script:LogBox.ReadOnly = $true
 $script:LogBox.DetectUrls = $false
 $script:LogBox.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
-$script:LogBox.BackColor = [System.Drawing.Color]::FromArgb(8, 11, 18)
-$script:LogBox.ForeColor = [System.Drawing.Color]::FromArgb(210, 220, 235)
+$script:LogBox.BackColor = [System.Drawing.Color]::Black
+$script:LogBox.ForeColor = [System.Drawing.Color]::FromArgb(215, 215, 215)
 $script:LogBox.Font = [System.Drawing.Font]::new('Consolas', 9)
+$script:LogBox.WordWrap = $false
+$script:LogBox.HideSelection = $false
 $logPanel.Controls.Add($script:LogBox)
 
-$hint = New-TextLabel 'Start the server from this panel to capture live logs and player joins.' 12 577 755 18 8 ([System.Drawing.Color]::FromArgb(115, 132, 158))
+$hint = New-TextLabel 'Start the server here to capture live logs and player joins.' 14 641 786 18 8 ([System.Drawing.Color]::FromArgb(105, 105, 105))
 $logPanel.Controls.Add($hint)
 
 $script:StartButton.Add_Click({ Start-ServerManager })
