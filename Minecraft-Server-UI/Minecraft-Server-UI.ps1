@@ -477,7 +477,9 @@ $form.FormBorderStyle = [System.Windows.Forms.FormBorderStyle]::FixedSingle
 $form.MaximizeBox = $false
 $form.MinimizeBox = $true
 $form.AutoScaleMode = [System.Windows.Forms.AutoScaleMode]::None
-$form.ClientSize = [System.Drawing.Size]::new(1200, 850)
+$form.Size = [System.Drawing.Size]::new(1200, 850)
+$script:UiWidth = $form.ClientSize.Width
+$script:UiHeight = $form.ClientSize.Height
 $form.BackColor = [System.Drawing.Color]::Black
 $form.ForeColor = [System.Drawing.Color]::FromArgb(235, 235, 235)
 $form.Font = [System.Drawing.Font]::new('Segoe UI', 9)
@@ -486,7 +488,7 @@ $form.ShowInTaskbar = $true
 # Header
 $header = New-Object System.Windows.Forms.Panel
 $header.Location = [System.Drawing.Point]::new(0, 0)
-$header.Size = [System.Drawing.Size]::new(1200, 96)
+$header.Size = [System.Drawing.Size]::new($script:UiWidth, 96)
 $header.BackColor = [System.Drawing.Color]::Black
 $form.Controls.Add($header)
 
@@ -499,14 +501,14 @@ $header.Controls.Add($subtitle)
 
 $headerLine = New-Object System.Windows.Forms.Panel
 $headerLine.Location = [System.Drawing.Point]::new(18, 94)
-$headerLine.Size = [System.Drawing.Size]::new(1164, 1)
+$headerLine.Size = [System.Drawing.Size]::new(($script:UiWidth - 36), 1)
 $headerLine.BackColor = [System.Drawing.Color]::FromArgb(34, 34, 34)
 $header.Controls.Add($headerLine)
 
 $script:StatusLabel = New-Object System.Windows.Forms.Label
 $script:StatusLabel.Text = 'OFFLINE'
 $script:StatusLabel.TextAlign = [System.Drawing.ContentAlignment]::MiddleCenter
-$script:StatusLabel.Location = [System.Drawing.Point]::new(1000, 25)
+$script:StatusLabel.Location = [System.Drawing.Point]::new(($script:UiWidth - 200), 25)
 $script:StatusLabel.Size = [System.Drawing.Size]::new(180, 40)
 $script:StatusLabel.BackColor = [System.Drawing.Color]::FromArgb(8, 8, 8)
 $script:StatusLabel.ForeColor = [System.Drawing.Color]::FromArgb(248, 113, 113)
@@ -520,6 +522,10 @@ $script:StopButton = New-PanelButton 'Stop server' 176 112 142 ([System.Drawing.
 $script:RestartButton = New-PanelButton 'Restart' 328 112 122 ([System.Drawing.Color]::FromArgb(28, 28, 28))
 $script:ClearButton = New-PanelButton 'Clear logs' 460 112 122 ([System.Drawing.Color]::FromArgb(18, 18, 18))
 $script:OpenFolderButton = New-PanelButton 'Open folder' 592 112 140 ([System.Drawing.Color]::FromArgb(18, 18, 18))
+$script:StartButton.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(34, 197, 94)
+$script:StartButton.FlatAppearance.MouseDownBackColor = [System.Drawing.Color]::FromArgb(21, 128, 61)
+$script:StopButton.FlatAppearance.MouseOverBackColor = [System.Drawing.Color]::FromArgb(220, 38, 38)
+$script:StopButton.FlatAppearance.MouseDownBackColor = [System.Drawing.Color]::FromArgb(153, 27, 27)
 $form.Controls.Add($script:StartButton)
 $form.Controls.Add($script:StopButton)
 $form.Controls.Add($script:RestartButton)
@@ -529,14 +535,14 @@ $form.Controls.Add($script:OpenFolderButton)
 # Main panels
 $sidePanel = New-Object System.Windows.Forms.Panel
 $sidePanel.Location = [System.Drawing.Point]::new(18, 170)
-$sidePanel.Size = [System.Drawing.Size]::new(330, 662)
+$sidePanel.Size = [System.Drawing.Size]::new(330, ($script:UiHeight - 188))
 $sidePanel.BackColor = [System.Drawing.Color]::FromArgb(5, 5, 5)
 $sidePanel.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
 $form.Controls.Add($sidePanel)
 
 $logPanel = New-Object System.Windows.Forms.Panel
 $logPanel.Location = [System.Drawing.Point]::new(366, 170)
-$logPanel.Size = [System.Drawing.Size]::new(816, 662)
+$logPanel.Size = [System.Drawing.Size]::new(($script:UiWidth - 384), ($script:UiHeight - 188))
 $logPanel.BackColor = [System.Drawing.Color]::FromArgb(5, 5, 5)
 $logPanel.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
 $form.Controls.Add($logPanel)
@@ -597,14 +603,14 @@ $sidePanel.Controls.Add($playersLine)
 $sidePanel.Controls.Add((New-TextLabel 'CONNECTED PLAYERS' 14 392 298 20 9 ([System.Drawing.Color]::FromArgb(145, 145, 145))))
 $script:PlayerList = New-Object System.Windows.Forms.ListBox
 $script:PlayerList.Location = [System.Drawing.Point]::new(14, 419)
-$script:PlayerList.Size = [System.Drawing.Size]::new(298, 208)
+$script:PlayerList.Size = [System.Drawing.Size]::new(298, ($sidePanel.ClientSize.Height - 452))
 $script:PlayerList.BackColor = [System.Drawing.Color]::Black
 $script:PlayerList.ForeColor = [System.Drawing.Color]::FromArgb(74, 222, 128)
 $script:PlayerList.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
 $script:PlayerList.Font = [System.Drawing.Font]::new('Consolas', 10)
 $sidePanel.Controls.Add($script:PlayerList)
 
-$playerHint = New-TextLabel 'Live tracking begins when this panel starts the server.' 14 638 298 18 8 ([System.Drawing.Color]::FromArgb(105, 105, 105))
+$playerHint = New-TextLabel 'Live tracking begins when this panel starts the server.' 14 ($sidePanel.ClientSize.Height - 22) 298 18 8 ([System.Drawing.Color]::FromArgb(105, 105, 105))
 $sidePanel.Controls.Add($playerHint)
 
 # Live console
@@ -617,7 +623,7 @@ $logPanel.Controls.Add($logSubtitle)
 
 $script:LogBox = New-Object System.Windows.Forms.RichTextBox
 $script:LogBox.Location = [System.Drawing.Point]::new(14, 61)
-$script:LogBox.Size = [System.Drawing.Size]::new(786, 568)
+$script:LogBox.Size = [System.Drawing.Size]::new(($logPanel.ClientSize.Width - 28), ($logPanel.ClientSize.Height - 92))
 $script:LogBox.ReadOnly = $true
 $script:LogBox.DetectUrls = $false
 $script:LogBox.BorderStyle = [System.Windows.Forms.BorderStyle]::FixedSingle
@@ -628,7 +634,7 @@ $script:LogBox.WordWrap = $false
 $script:LogBox.HideSelection = $false
 $logPanel.Controls.Add($script:LogBox)
 
-$hint = New-TextLabel 'Start the server here to capture live logs and player joins.' 14 641 786 18 8 ([System.Drawing.Color]::FromArgb(105, 105, 105))
+$hint = New-TextLabel 'Start the server here to capture live logs and player joins.' 14 ($logPanel.ClientSize.Height - 19) ($logPanel.ClientSize.Width - 28) 18 8 ([System.Drawing.Color]::FromArgb(105, 105, 105))
 $logPanel.Controls.Add($hint)
 
 $script:StartButton.Add_Click({ Start-ServerManager })
